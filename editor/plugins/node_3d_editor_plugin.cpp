@@ -4098,7 +4098,11 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 
 	PhysicsDirectSpaceState3D::RayResult result;
 	if (ss->intersect_ray(ray_params, result)) {
-		return result.position;
+		AABB aabb = _calculate_spatial_bounds(preview_node);
+		float distance = Math::abs(aabb.size.dot(result.normal) / 2);
+		Vector3 result_offset = result.position + result.normal * distance;
+
+		return result_offset;
 	}
 
 	const bool is_orthogonal = camera->get_projection() == Camera3D::PROJECTION_ORTHOGONAL;
