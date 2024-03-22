@@ -4098,27 +4098,32 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 
 	PhysicsDirectSpaceState3D::RayResult result;
 	if (ss->intersect_ray(ray_params, result) && preview_node->get_child_count() > 0) {
-		// preview_node actually *contains* the object we want to measure.
+		// Calculate an offset for the preview_node such that the instance's OOBB is on top of and touching the contact surface's plane.
+
+		// preview_node actually *contains* the instance we want to measure.
 		Node3D *preview_node_child = Object::cast_to<Node3D>(preview_node->get_child(0));
-		AABB aabb = _calculate_spatial_bounds(preview_node_child);
-		// This aabb is aligned to the object, so we map the normal into its local space.
+		AABB oobb = _calculate_spatial_bounds(preview_node_child);
+
+		// We are going to do all of our calculations in preview_node_child's local space.
 		Transform3D child_transform = preview_node_child->get_transform();
 		Vector3 normal_local = child_transform.basis.xform_inv(result.normal);
+		Vector3 preview_node_position_local = child_transform.xform_inv(Vector3(0, 0, 0));
 
-		// Calculate the offset needed to raise the object's supporting corner to the surface's plane.
-		Vector3 support = aabb.get_support(-normal_local);
+		// Calculate the offset distance needed to raise the OOBB's supporting corner to the contact surface's plane.
+		Vector3 support = oobb.get_support(-normal_local);
 		Plane support_plane = Plane(normal_local, support);
-		// Get the preview_node position in child's local space.
-		Vector3 preview_node_position = child_transform.xform_inv(Vector3(0, 0, 0));
-		float distance = support_plane.distance_to(preview_node_position);
+		float offset_distance = support_plane.distance_to(preview_node_position_local);
 
-		// If the origin of the preview_node is outside the aabb and behind the support_plane, we don't need to offset anything.
-		if (distance < 0) {
-			// This effectively uses the preview_node origin as the support point.
-			distance = 0;
+		// Special case to allow the preview_node's position to also support the object if needed:
+		// This will only affect scenes whose origin is outside the scene's own OOBB
+		// (i.e. the scene's root node was saved with an unusual position that shifts the OOBB away from the origin).
+		if (offset_distance < 0) {
+			// The origin of the preview_node was behind the support_plane,
+			// so shift the support plane to that position instead.
+			offset_distance = 0;
 		}
 		// result_offset is in global space.
-		Vector3 result_offset = result.position + result.normal * distance;
+		Vector3 result_offset = result.position + result.normal * offset_distance;
 
 		return result_offset;
 	}
