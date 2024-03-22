@@ -4102,7 +4102,7 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 		Node3D *preview_node_child = Object::cast_to<Node3D>(preview_node->get_child(0));
 		AABB aabb = _calculate_spatial_bounds(preview_node_child);
 		// This aabb is aligned to the object, so we map the normal into its local space.
-		Basis rotation = preview_node->get_global_transform().basis;
+		Basis rotation = preview_node_child->get_global_transform().basis;
 		Vector3 normal_local = rotation.xform_inv(result.normal);
 
 		// Calculate the offset needed to raise the object's supporting corner to the surface's plane.
