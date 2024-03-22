@@ -4100,10 +4100,11 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 	if (ss->intersect_ray(ray_params, result)) {
 		AABB aabb = _calculate_spatial_bounds(preview_node);
 		Vector3 support = aabb.get_support(-result.normal);
-		// Assuming that the AABB was created relative to the object's local space.
-		Vector3 object_origin_in_aabb_space = Vector3(0, 0, 0);
-		Vector3 object_origin_relative_to_support = object_origin_in_aabb_space - support;
-		float distance = object_origin_relative_to_support.dot(result.normal); // todo consider rewriting with Plane for readability
+		Plane support_plane = Plane(result.normal, support);
+		// The support corner is in local space, so we'll use (0, 0, 0) as the object's origin.
+		Vector3 object_origin = Vector3(0, 0, 0);
+		Vector3 object_origin_relative_to_support = object_origin - support;
+		float distance = support_plane.distance_to(object_origin_relative_to_support);
 		Vector3 result_offset = result.position + result.normal * distance;
 
 		return result_offset;
