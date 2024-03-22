@@ -4099,7 +4099,11 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 	PhysicsDirectSpaceState3D::RayResult result;
 	if (ss->intersect_ray(ray_params, result)) {
 		AABB aabb = _calculate_spatial_bounds(preview_node);
-		float distance = Math::abs(aabb.size.dot(result.normal) / 2);
+		Vector3 support = aabb.get_support(-result.normal);
+		// Assuming that the AABB was created relative to the object's local space.
+		Vector3 object_origin_in_aabb_space = Vector3(0, 0, 0);
+		Vector3 object_origin_relative_to_support = object_origin_in_aabb_space - support;
+		float distance = object_origin_relative_to_support.dot(result.normal); // todo consider rewriting with Plane for readability
 		Vector3 result_offset = result.position + result.normal * distance;
 
 		return result_offset;
