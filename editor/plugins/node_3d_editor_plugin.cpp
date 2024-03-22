@@ -4099,6 +4099,11 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 	PhysicsDirectSpaceState3D::RayResult result;
 	if (ss->intersect_ray(ray_params, result)) {
 		AABB aabb = _calculate_spatial_bounds(preview_node);
+		// This aabb is aligned to the object, so we rotate to align it to global space.
+		Basis rotation = preview_node->get_global_transform().basis;
+		aabb = Transform3D(rotation, Vector3(0, 0, 0)).xform(aabb);
+
+		// Calculate the offset needed to raise the object's supporting corner to the surface's plane.
 		Vector3 support = aabb.get_support(-result.normal);
 		Plane support_plane = Plane(result.normal, support);
 		// The support corner is in local space, so we'll use (0, 0, 0) as the object's origin.
