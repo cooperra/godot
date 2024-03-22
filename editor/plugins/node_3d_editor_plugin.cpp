@@ -4097,16 +4097,18 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 	ray_params.to = world_pos + world_ray * camera->get_far();
 
 	PhysicsDirectSpaceState3D::RayResult result;
-	if (ss->intersect_ray(ray_params, result)) {
-		AABB aabb = _calculate_spatial_bounds(preview_node);
-		// This aabb is aligned to the preview_node, so we map the normal into its local space.
+	if (ss->intersect_ray(ray_params, result) && preview_node->get_child_count() > 0) {
+		// preview_node actually *contains* the object we want to measure.
+		Node3D *preview_node_child = Object::cast_to<Node3D>(preview_node->get_child(0));
+		AABB aabb = _calculate_spatial_bounds(preview_node_child);
+		// This aabb is aligned to the object, so we map the normal into its local space.
 		Basis rotation = preview_node->get_global_transform().basis;
 		Vector3 normal_local = rotation.xform_inv(result.normal);
 
 		// Calculate the offset needed to raise the object's supporting corner to the surface's plane.
 		Vector3 support = aabb.get_support(-normal_local);
 		Plane support_plane = Plane(normal_local, support);
-		// We're in local space, so (0, 0, 0) is the preview_node's origin.
+		// We're in local space, so (0, 0, 0) is the object's origin. // TODO this might be different now that we're using the child.
 		float distance = support_plane.distance_to(Vector3(0, 0, 0));
 		// result_offset is in global space.
 		Vector3 result_offset = result.position + result.normal * distance;
