@@ -4103,8 +4103,7 @@ Vector3 Node3DEditorViewport::_get_instance_position(const Point2 &p_pos) const 
 		Plane support_plane = Plane(result.normal, support);
 		// The support corner is in local space, so we'll use (0, 0, 0) as the object's origin.
 		Vector3 object_origin = Vector3(0, 0, 0);
-		Vector3 object_origin_relative_to_support = object_origin - support;
-		float distance = support_plane.distance_to(object_origin_relative_to_support);
+		float distance = support_plane.distance_to(object_origin);
 		Vector3 result_offset = result.position + result.normal * distance;
 
 		return result_offset;
