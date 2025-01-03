@@ -4804,18 +4804,6 @@ bool Node3DEditorViewport::_create_instance(Node *p_parent, const String &p_path
 		instantiated_scene->set_scene_file_path(ProjectSettings::get_singleton()->localize_path(p_path));
 	}
 
-	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-	undo_redo->add_do_method(p_parent, "add_child", instantiated_scene, true);
-	undo_redo->add_do_method(instantiated_scene, "set_owner", EditorNode::get_singleton()->get_edited_scene());
-	undo_redo->add_do_reference(instantiated_scene);
-	undo_redo->add_undo_method(p_parent, "remove_child", instantiated_scene);
-	undo_redo->add_do_method(editor_selection, "add_node", instantiated_scene);
-
-	String new_name = p_parent->validate_child_name(instantiated_scene);
-	EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
-	undo_redo->add_do_method(ed, "live_debug_instantiate_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_path, new_name);
-	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
-
 	Node3D *node3d = Object::cast_to<Node3D>(instantiated_scene);
 	if (node3d) {
 		Transform3D parent_tf;
@@ -4832,8 +4820,20 @@ bool Node3DEditorViewport::_create_instance(Node *p_parent, const String &p_path
 			new_tf.basis = parent_tf.affine_inverse().basis * new_tf.basis;
 		}
 
-		undo_redo->add_do_method(instantiated_scene, "set_transform", new_tf);
+		node3d->set_transform(new_tf);
 	}
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->add_do_method(p_parent, "add_child", instantiated_scene, true);
+	undo_redo->add_do_method(instantiated_scene, "set_owner", EditorNode::get_singleton()->get_edited_scene());
+	undo_redo->add_do_reference(instantiated_scene);
+	undo_redo->add_undo_method(p_parent, "remove_child", instantiated_scene);
+	undo_redo->add_do_method(editor_selection, "add_node", instantiated_scene);
+
+	String new_name = p_parent->validate_child_name(instantiated_scene);
+	EditorDebuggerNode *ed = EditorDebuggerNode::get_singleton();
+	undo_redo->add_do_method(ed, "live_debug_instantiate_node", EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent), p_path, new_name);
+	undo_redo->add_undo_method(ed, "live_debug_remove_node", NodePath(String(EditorNode::get_singleton()->get_edited_scene()->get_path_to(p_parent)) + "/" + new_name));
 
 	return true;
 }
